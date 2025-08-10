@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Авторизация / Регистрация</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background-color: #000;
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+    .nickname-global {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      font-size: 22px;
+      color: white;
+      font-style: italic;
+      font-weight: bold;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+      z-index: 1;
+    }
+    .content {
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .box {
+      background: #111;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(255,255,255,0.1);
+      width: 320px;
+      animation: fadeInUp 0.8s forwards;
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    h2 { text-align: center; color: white; margin-bottom: 20px; }
+    input[type="text"], input[type="password"] {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border: 1px solid #444;
+      border-radius: 5px;
+      background: #222;
+      color: white;
+    }
+    input[type="submit"], button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      background: #0072ff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    input[type="submit"]:hover, button:hover {
+      background: #005ed9;
+    }
+    .switch-btn {
+      background: transparent;
+      color: #0072ff;
+      border: none;
+      text-decoration: underline;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .message { text-align: center; color: red; min-height: 20px; font-size: 14px; }
+    .success { color: lime; }
+    .link-btn {
+      padding: 10px;
+      margin: 5px 0;
+      background: #0072ff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      width: 100%;
+      cursor: pointer;
+    }
+    .link-btn:hover { background: #005ed9; }
+  </style>
+</head>
+<body>
+  <div class="nickname-global">by hemsikdll</div>
+  <div class="content">
+    <div class="box" id="authBox">
+      <h2 id="formTitle">Авторизация</h2>
+      <form id="loginForm">
+        <input type="text" id="loginUsername" placeholder="Имя пользователя" required />
+        <input type="password" id="loginPassword" placeholder="Пароль" required />
+        <input type="submit" value="Войти" />
+        <div class="message" id="loginMessage"></div>
+        <button type="button" class="switch-btn" onclick="showRegister()">Нет аккаунта? Зарегистрироваться</button>
+      </form>
+
+      <form id="registerForm" style="display:none;">
+        <input type="text" id="regUsername" placeholder="Придумайте логин" required />
+        <input type="password" id="regPassword" placeholder="Придумайте пароль" required />
+        <input type="password" id="regPasswordConfirm" placeholder="Повторите пароль" required />
+        <input type="submit" value="Зарегистрироваться" />
+        <div class="message" id="regMessage"></div>
+        <button type="button" class="switch-btn" onclick="showLogin()">Уже есть аккаунт? Войти</button>
+      </form>
+    </div>
+
+    <div class="box" id="userPanel" style="display:none;">
+      <h2>Личный кабинет</h2>
+      <p id="welcomeText" style="text-align:center; font-weight:bold;"></p>
+      <h3 style="font-size:16px; margin-top:10px;">Сменить пароль</h3>
+      <input type="password" id="newPassword" placeholder="Новый пароль" />
+      <button onclick="changePassword()">Изменить пароль</button>
+      <div class="message" id="passMessage"></div>
+      <h3 style="font-size:16px; margin-top:15px;">Мои ссылки</h3>
+      <button class="link-btn" onclick="window.location.href='https://t.me/fan_amix32'">Telegram канал</button>
+      <button class="link-btn" onclick="window.location.href='https://www.tiktok.com/@hemsikdll'">TikTok hemsikdll</button>
+      <button class="link-btn" onclick="window.location.href='https://www.youtube.com/@vovakamanov'">YouTube VovaKamanov</button>
+      <button style="background:#e53935; margin-top:20px;" onclick="logout()">Выйти</button>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const loginForm = document.getElementById("loginForm");
+      const registerForm = document.getElementById("registerForm");
+      const formTitle = document.getElementById("formTitle");
+      const authBox = document.getElementById("authBox");
+      const userPanel = document.getElementById("userPanel");
+      const welcomeText = document.getElementById("welcomeText");
+
+      function showRegister() {
+        loginForm.style.display = "none";
+        registerForm.style.display = "block";
+        formTitle.textContent = "Регистрация";
+      }
+      function showLogin() {
+        registerForm.style.display = "none";
+        loginForm.style.display = "block";
+        formTitle.textContent = "Авторизация";
+      }
+
+      registerForm.addEventListener("submit", function(e) {
+        e.preventDefault();
+        const username = document.getElementById("regUsername").value.trim();
+        const password = document.getElementById("regPassword").value.trim();
+        const confirmPassword = document.getElementById("regPasswordConfirm").value.trim();
+        const regMessage = document.getElementById("regMessage");
+        const users = JSON.parse(localStorage.getItem("users") || "{}");
+
+        // Валидация
+        if (username.length < 3) {
+          regMessage.textContent = "Логин должен быть минимум 3 символа";
+          regMessage.classList.remove("success");
+          return;
+        }
+        if (password.length < 6) {
+          regMessage.textContent = "Пароль должен быть минимум 6 символов";
+          regMessage.classList.remove("success");
+          return;
+        }
+        if (password !== confirmPassword) {
+          regMessage.textContent = "Пароли не совпадают";
+          regMessage.classList.remove("success");
+          return;
+        }
+        if (users[username]) {
+          regMessage.textContent = "Логин уже занят";
+          regMessage.classList.remove("success");
+          return;
+        }
+
+        users[username] = { password };
+        localStorage.setItem("users", JSON.stringify(users));
+        regMessage.classList.add("success");
+        regMessage.textContent = "Регистрация успешна!";
+
+        setTimeout(() => {
+          showLogin();
+          document.getElementById("regUsername").value = "";
+          document.getElementById("regPassword").value = "";
+          document.getElementById("regPasswordConfirm").value = "";
+          regMessage.textContent = "";
+        }, 1000);
+      });
+
+      loginForm.addEventListener("submit", function(e) {
+        e.preventDefault();
+        const username = document.getElementById("loginUsername").value.trim();
+        const password = document.getElementById("loginPassword").value.trim();
+        const loginMessage = document.getElementById("loginMessage");
+        const users = JSON.parse(localStorage.getItem("users") || "{}");
+
+        if (!users[username] || users[username].password !== password) {
+          loginMessage.textContent = "Неверный логин или пароль";
+          return;
+        }
+
+        localStorage.setItem("currentUser", username);
+        openUserPanel(username);
+      });
+
+      function openUserPanel(username) {
+        authBox.style.display = "none";
+        userPanel.style.display = "block";
+        welcomeText.textContent = "Привет, " + username + "!";
+      }
+
+      function changePassword() {
+        const newPass = document.getElementById("newPassword").value.trim();
+        const passMessage = document.getElementById("passMessage");
+        const username = localStorage.getItem("currentUser");
+
+        if (!newPass) {
+          passMessage.textContent = "Введите новый пароль";
+          return;
+        }
+
+        const users = JSON.parse(localStorage.getItem("users") || "{}");
+        users[username].password = newPass;
+        localStorage.setItem("users", JSON.stringify(users));
+        passMessage.classList.add("success");
+        passMessage.textContent = "Пароль успешно изменён!";
+        document.getElementById("newPassword").value = "";
+      }
+
+      function logout() {
+        localStorage.removeItem("currentUser");
+        userPanel.style.display = "none";
+        authBox.style.display = "block";
+        showLogin();
+      }
+
+      window.changePassword = changePassword;
+      window.logout = logout;
+      window.showRegister = showRegister;
+      window.showLogin = showLogin;
+
+      const currentUser = localStorage.getItem("currentUser");
+      if (currentUser) {
+        openUserPanel(currentUser);
+      }
+    });
+  </script>
+</body>
+</html>
+
